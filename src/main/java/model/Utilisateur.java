@@ -19,7 +19,6 @@ public class Utilisateur {
     private String motDePasse;
     
     @Column(name = "est_connecte")
-    @NotBlank
     private boolean estConnecte;
 
     public Long getId() {
