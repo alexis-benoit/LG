@@ -1,70 +1,75 @@
 package service;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import static org.mockito.Mockito.*;
+import model.Utilisateur;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import repository.UtilisateurRepository;
 
-@RunWith(MockitoJUnitRunner.class)
-public class UtilisateurServiceTest {
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class UtilisateurServiceTest {
+
+    @Mock
+    private UtilisateurRepository utilisateurRepository;
 
     @InjectMocks
     private UtilisateurService utilisateurService;
 
-    @Mock
-    private UtilisateurDAO utilisateurDAO;
-
-    @Test
-    public void testAjouterUtilisateur() {
-        Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setNomUtilisateur("john_doe");
-        utilisateur.setMotDePasse("password");
-
-        utilisateurService.ajouterUtilisateur(utilisateur);
-
-        verify(utilisateurDAO).ajouterUtilisateur(utilisateur);
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testMettreAJourUtilisateur() {
+    void testCreerUtilisateur() {
         Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setId(1L);
-        utilisateur.setNomUtilisateur("updated_user");
+        utilisateur.setNomUtilisateur("utilisateur1");
+        utilisateur.setMotDePasse("motdepasse");
 
-        utilisateurService.mettreAJourUtilisateur(utilisateur);
+        when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
 
-        verify(utilisateurDAO).mettreAJourUtilisateur(utilisateur);
+        Utilisateur nouveauUtilisateur = utilisateurService.creerUtilisateur(utilisateur);
+
+        assertNotNull(nouveauUtilisateur);
+        assertEquals(utilisateur.getNomUtilisateur(), nouveauUtilisateur.getNomUtilisateur());
+        assertEquals(utilisateur.getMotDePasse(), nouveauUtilisateur.getMotDePasse());
+
+        verify(utilisateurRepository, times(1)).save(utilisateur);
     }
 
     @Test
-    public void testSupprimerUtilisateur() {
-        Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setId(1L);
-
-        utilisateurService.supprimerUtilisateur(utilisateur);
-
-        verify(utilisateurDAO).supprimerUtilisateur(utilisateur);
-    }
-
-    @Test
-    public void testObtenirUtilisateurParId() {
+    void testMettreAJourUtilisateur() {
         Long userId = 1L;
-        when(utilisateurDAO.obtenirUtilisateurParId(userId)).thenReturn(new Utilisateur());
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setId(userId);
+        utilisateur.setNomUtilisateur("utilisateur1");
+        utilisateur.setMotDePasse("motdepasse");
 
-        Utilisateur utilisateur = utilisateurService.obtenirUtilisateurParId(userId);
+        when(utilisateurRepository.existsById(userId)).thenReturn(true);
+        when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
 
-        assertNotNull(utilisateur);
+        Utilisateur utilisateurMisAJour = utilisateurService.mettreAJourUtilisateur(userId, utilisateur);
+
+        assertNotNull(utilisateurMisAJour);
+        assertEquals(utilisateur.getId(), utilisateurMisAJour.getId());
+        assertEquals(utilisateur.getNomUtilisateur(), utilisateurMisAJour.getNomUtilisateur());
+        assertEquals(utilisateur.getMotDePasse(), utilisateurMisAJour.getMotDePasse());
+
+        verify(utilisateurRepository, times(1)).save(utilisateur);
     }
 
     @Test
-    public void testObtenirTousLesUtilisateurs() {
-        List<Utilisateur> utilisateurs = Arrays.asList(new Utilisateur(), new Utilisateur());
-        when(utilisateurDAO.obtenirTousLesUtilisateurs()).thenReturn(utilisateurs);
+    void testSupprimerUtilisateur() {
+        Long userId = 1L;
 
-        List<Utilisateur> result = utilisateurService.obtenirTousLesUtilisateurs();
+        doNothing().when(utilisateurRepository).deleteById(userId);
 
-        assertEquals(2, result.size());
+        utilisateurService.supprimerUtilisateur(userId);
+
+        verify(utilisateurRepository, times(1)).deleteById(userId);
     }
 }
