@@ -8,12 +8,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import exception.ChampNonRenseigneException;
+import exception.ChampTropGrandException;
 import repository.UtilisateurRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
-import javax.validation.ConstraintViolationException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -86,26 +86,30 @@ class UtilisateurServiceTest {
     void testCreerUtilisateurChampManquant() {
         Utilisateur utilisateur = new Utilisateur();
 
-        doThrow(ConstraintViolationException.class)
+        doThrow(ChampNonRenseigneException.class)
         .when(utilisateurRepository).save(utilisateur);
 
-	    assertThrows(ConstraintViolationException.class, () -> {
+        ChampNonRenseigneException exception = assertThrows(ChampNonRenseigneException.class, () -> {
 	        utilisateurService.creerUtilisateur(utilisateur);
 	    });
+	    
+	    assertEquals("Nom d'utilisateur", exception.getChamp());
     }
     
     @Test
     void testMettreAJourUtilisateurChampManquant() {
-        Utilisateur utilisateur = new Utilisateur();
+    	Utilisateur utilisateur = new Utilisateur();
         // Configurer l'utilisateur avec des champs manquants
 
-        doThrow(ConstraintViolationException.class)
-            .when(utilisateurServiceSpy)
-            .mettreAJourUtilisateur(anyLong(), any(Utilisateur.class));
-
-        assertThrows(ConstraintViolationException.class, () -> {
+    	doThrow(new ChampNonRenseigneException("Nom d'utilisateur"))
+	        .when(utilisateurServiceSpy)
+	        .mettreAJourUtilisateur(anyLong(), any(Utilisateur.class));
+        
+        ChampNonRenseigneException exception = assertThrows(ChampNonRenseigneException.class, () -> {
             utilisateurServiceSpy.mettreAJourUtilisateur(1L, utilisateur);
         });
+        
+        assertEquals("Nom d'utilisateur", exception.getChamp());
     }
     
     @Test
@@ -113,26 +117,31 @@ class UtilisateurServiceTest {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNomUtilisateur("123456789012345678901234567890123456789012345678901"); // 51 caractères
 
-        doThrow(ConstraintViolationException.class)
+        doThrow(ChampTropGrandException.class)
             .when(utilisateurRepository).save(utilisateur);
 
-        assertThrows(ConstraintViolationException.class, () -> {
+        ChampTropGrandException exception = assertThrows(ChampTropGrandException.class, () -> {
             utilisateurService.creerUtilisateur(utilisateur);
         });
+        
+        assertEquals("Nom d'utilisateur", exception.getChamp());
     }
 
     @Test
     void testCreerUtilisateurLimiteTailleMotDePasse() {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNomUtilisateur("utilisateur1");
-        utilisateur.setMotDePasse("123456789012345678901234567890123456789012345678901234567890123456789012345678901"); // 101 caractères
+        utilisateur.setMotDePasse("12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901"); // 101 caractères
 
-        doThrow(ConstraintViolationException.class)
+        
+        doThrow(ChampTropGrandException.class)
             .when(utilisateurRepository).save(utilisateur);
 
-        assertThrows(ConstraintViolationException.class, () -> {
+        ChampTropGrandException exception = assertThrows(ChampTropGrandException.class, () -> {
             utilisateurService.creerUtilisateur(utilisateur);
         });
+        
+        assertEquals("Mot de passe", exception.getChamp());
     }
 
     @Test
@@ -141,14 +150,16 @@ class UtilisateurServiceTest {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setId(userId);
         utilisateur.setNomUtilisateur("123456789012345678901234567890123456789012345678901"); // 51 caractères
-
-        doThrow(ConstraintViolationException.class)
+        
+        doThrow(new ChampTropGrandException("Nom d'utilisateur", 50, 51))
             .when(utilisateurServiceSpy)
             .mettreAJourUtilisateur(userId, utilisateur);
 
-        assertThrows(ConstraintViolationException.class, () -> {
+        ChampTropGrandException exception = assertThrows(ChampTropGrandException.class, () -> {
             utilisateurServiceSpy.mettreAJourUtilisateur(userId, utilisateur);
         });
+        
+        assertEquals("Nom d'utilisateur", exception.getChamp());
     }
 
     @Test
@@ -157,14 +168,16 @@ class UtilisateurServiceTest {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setId(userId);
         utilisateur.setNomUtilisateur("utilisateur1");
-        utilisateur.setMotDePasse("123456789012345678901234567890123456789012345678901234567890123456789012345678901"); // 101 caractères
-
-        doThrow(ConstraintViolationException.class)
+        utilisateur.setMotDePasse("12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901"); // 101 caractères
+        
+        doThrow(new ChampTropGrandException("Mot de passe", 50, 51))
             .when(utilisateurServiceSpy)
             .mettreAJourUtilisateur(userId, utilisateur);
 
-        assertThrows(ConstraintViolationException.class, () -> {
+        ChampTropGrandException exception = assertThrows(ChampTropGrandException.class, () -> {
             utilisateurServiceSpy.mettreAJourUtilisateur(userId, utilisateur);
         });
+        
+        assertEquals("Mot de passe", exception.getChamp());
     }
 }
