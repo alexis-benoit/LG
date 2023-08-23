@@ -11,11 +11,16 @@ import repository.UtilisateurRepository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 @Service
 public class UtilisateurService {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
+    
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     public List<Utilisateur> obtenirTousLesUtilisateurs() {
         return utilisateurRepository.findAll();
@@ -43,6 +48,9 @@ public class UtilisateurService {
             throw new ChampTropGrandException("Mot de passe", 100, utilisateur.getMotDePasse().length());
         }
         
+    	String motDePasseCrypte = passwordEncoder.encode(utilisateur.getMotDePasse());
+        utilisateur.setMotDePasse(motDePasseCrypte);
+        
         return utilisateurRepository.save(utilisateur);
     }
 
@@ -60,8 +68,8 @@ public class UtilisateurService {
             throw new ChampNonRenseigneException("Mot de passe");
         }
 
-    	if (utilisateur.getMotDePasse().length() > 100) {
-            throw new ChampTropGrandException("Mot de passe", 100, utilisateur.getMotDePasse().length());
+    	if (utilisateur.getMotDePasse().length() > 50) {
+            throw new ChampTropGrandException("Mot de passe", 50, utilisateur.getMotDePasse().length());
         }
         
         if (utilisateurRepository.existsById(id)) {
@@ -73,5 +81,13 @@ public class UtilisateurService {
 
     public void supprimerUtilisateur(Long id) {
         utilisateurRepository.deleteById(id);
+    }
+    
+    public void setUtilisateurRepository(UtilisateurRepository utilisateurRepository) {
+        this.utilisateurRepository = utilisateurRepository;
+    }
+
+    public void setPasswordEncoder(BCryptPasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
     }
 }

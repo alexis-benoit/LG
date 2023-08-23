@@ -7,6 +7,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import exception.ChampNonRenseigneException;
 import exception.ChampTropGrandException;
@@ -19,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UtilisateurServiceTest {
 
-    @Mock
+	@Mock
     private UtilisateurRepository utilisateurRepository;
 
     @InjectMocks
@@ -27,10 +31,17 @@ class UtilisateurServiceTest {
     
     @Spy
     private UtilisateurService utilisateurServiceSpy;
-    
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+    	MockitoAnnotations.openMocks(this);
+    	passwordEncoder = mock(BCryptPasswordEncoder.class);
+        utilisateurService = new UtilisateurService(); // Réinitialisez l'objet utilisateurService avec le passwordEncoder simulé.
+        utilisateurService.setUtilisateurRepository(utilisateurRepository);
+        utilisateurService.setPasswordEncoder(passwordEncoder);
     }
 
     @Test
@@ -38,14 +49,17 @@ class UtilisateurServiceTest {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNomUtilisateur("utilisateur1");
         utilisateur.setMotDePasse("motdepasse");
-
+        
+       System.out.println("mdp : "+ utilisateur.getMotDePasse()); 
+        
+        String motDePasseCrypte = passwordEncoder.encode(utilisateur.getMotDePasse());
         when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
 
         Utilisateur nouveauUtilisateur = utilisateurService.creerUtilisateur(utilisateur);
 
         assertNotNull(nouveauUtilisateur);
         assertEquals(utilisateur.getNomUtilisateur(), nouveauUtilisateur.getNomUtilisateur());
-        assertEquals(utilisateur.getMotDePasse(), nouveauUtilisateur.getMotDePasse());
+        assertEquals(motDePasseCrypte, nouveauUtilisateur.getMotDePasse());
 
         verify(utilisateurRepository, times(1)).save(utilisateur);
     }
@@ -131,16 +145,15 @@ class UtilisateurServiceTest {
     void testCreerUtilisateurLimiteTailleMotDePasse() {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNomUtilisateur("utilisateur1");
-        utilisateur.setMotDePasse("12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901"); // 101 caractères
+        utilisateur.setMotDePasse("123456789012345678901234567890123456789012345678901"); // 51 caractères
 
         
-        doThrow(ChampTropGrandException.class)
-            .when(utilisateurRepository).save(utilisateur);
+        when(utilisateurRepository.save(utilisateur)).thenThrow(new ChampTropGrandException("Mot de passe", 50, utilisateur.getMotDePasse().length()));
 
         ChampTropGrandException exception = assertThrows(ChampTropGrandException.class, () -> {
             utilisateurService.creerUtilisateur(utilisateur);
         });
-        
+
         assertEquals("Mot de passe", exception.getChamp());
     }
 
@@ -168,7 +181,7 @@ class UtilisateurServiceTest {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setId(userId);
         utilisateur.setNomUtilisateur("utilisateur1");
-        utilisateur.setMotDePasse("12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901"); // 101 caractères
+        utilisateur.setMotDePasse("123456789012345678901234567890123456789012345678901"); // 51 caractères
         
         doThrow(new ChampTropGrandException("Mot de passe", 50, 51))
             .when(utilisateurServiceSpy)
