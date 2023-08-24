@@ -1,5 +1,6 @@
 package exception;
 
+@SuppressWarnings("serial")
 public class ChampTropGrandException extends RuntimeException {
 	private String champ;
 

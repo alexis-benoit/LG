@@ -1,5 +1,6 @@
 package exception;
 
+@SuppressWarnings("serial")
 public class ChampNonRenseigneException extends RuntimeException {
 	private String champ;
 
