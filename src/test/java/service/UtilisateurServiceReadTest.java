@@ -74,29 +74,42 @@ public class UtilisateurServiceReadTest {
         assertEquals("utilisateur2", result.get(1).getNomUtilisateur());
     }
 
-    @Test
-    public void testObtenirUtilisateurParId() {
-        
-    	when(utilisateurRepository.findById(anyLong()))
-        .thenAnswer(invocation -> {
-            Long idDemande = invocation.getArgument(0);
-            Utilisateur utilisateurCorrespondant = utilisateursFictifsList.stream()
-                    .filter(utilisateur -> utilisateur.getId().equals(idDemande))
-                    .findFirst()
-                    .orElse(null);
-            return Optional.ofNullable(utilisateurCorrespondant); // Wrap in Optional
-        });
+	@Test
+	public void testObtenirUtilisateurExistantParId() {
+	    when(utilisateurRepository.findById(anyLong()))
+	            .thenAnswer(invocation -> {
+	                Long idDemande = invocation.getArgument(0);
+	                Utilisateur utilisateurCorrespondant = utilisateursFictifsList.stream()
+	                        .filter(utilisateur -> utilisateur.getId().equals(idDemande))
+	                        .findFirst()
+	                        .orElse(null);
+	                return Optional.ofNullable(utilisateurCorrespondant);
+	            });
 
-		Optional<Utilisateur> resultat1 = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(1L));
-		Optional<Utilisateur> resultat2 = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(2L));
-		Optional<Utilisateur> resultatInexistant = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(999L));
+	    Optional<Utilisateur> resultat1 = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(1L));
+	    Optional<Utilisateur> resultat2 = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(2L));
 
-		assertTrue(resultat1.isPresent());
-		assertEquals("utilisateur1", resultat1.get().getNomUtilisateur());
-		
-		assertTrue(resultat2.isPresent());
-		assertEquals("utilisateur2", resultat2.get().getNomUtilisateur());
-		
-		 assertFalse(resultatInexistant.isPresent());
-    }
+	    assertTrue(resultat1.isPresent());
+	    assertEquals("utilisateur1", resultat1.get().getNomUtilisateur());
+
+	    assertTrue(resultat2.isPresent());
+	    assertEquals("utilisateur2", resultat2.get().getNomUtilisateur());
+	}
+
+	@Test
+	public void testObtenirUtilisateurInexistantParId() {
+	    when(utilisateurRepository.findById(anyLong()))
+	            .thenAnswer(invocation -> {
+	                Long idDemande = invocation.getArgument(0);
+	                Utilisateur utilisateurCorrespondant = utilisateursFictifsList.stream()
+	                        .filter(utilisateur -> utilisateur.getId().equals(idDemande))
+	                        .findFirst()
+	                        .orElse(null);
+	                return Optional.ofNullable(utilisateurCorrespondant);
+	            });
+
+	    Optional<Utilisateur> resultatInexistant = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(999L));
+
+	    assertFalse(resultatInexistant.isPresent());
+	}
 }
