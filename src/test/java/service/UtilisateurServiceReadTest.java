@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,26 +77,26 @@ public class UtilisateurServiceReadTest {
     @Test
     public void testObtenirUtilisateurParId() {
         
-        when(utilisateurRepository.findById(anyLong()))
+    	when(utilisateurRepository.findById(anyLong()))
         .thenAnswer(invocation -> {
             Long idDemande = invocation.getArgument(0);
             Utilisateur utilisateurCorrespondant = utilisateursFictifsList.stream()
                     .filter(utilisateur -> utilisateur.getId().equals(idDemande))
                     .findFirst()
                     .orElse(null);
-            return utilisateurCorrespondant;
+            return Optional.ofNullable(utilisateurCorrespondant); // Wrap in Optional
         });
 
-		Utilisateur resultat1 = utilisateurService.obtenirUtilisateurParId(1L);
-		Utilisateur resultat2 = utilisateurService.obtenirUtilisateurParId(2L);
-		Utilisateur resultatInexistant = utilisateurService.obtenirUtilisateurParId(999L);
+		Optional<Utilisateur> resultat1 = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(1L));
+		Optional<Utilisateur> resultat2 = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(2L));
+		Optional<Utilisateur> resultatInexistant = Optional.ofNullable(utilisateurService.obtenirUtilisateurParId(999L));
+
+		assertTrue(resultat1.isPresent());
+		assertEquals("utilisateur1", resultat1.get().getNomUtilisateur());
 		
-		assertNotNull(resultat1);
-		assertEquals("utilisateur1", resultat1.getNomUtilisateur());
+		assertTrue(resultat2.isPresent());
+		assertEquals("utilisateur2", resultat2.get().getNomUtilisateur());
 		
-		assertNotNull(resultat2);
-		assertEquals("utilisateur2", resultat2.getNomUtilisateur());
-		
-		assertNull(resultatInexistant);
+		 assertFalse(resultatInexistant.isPresent());
     }
 }
