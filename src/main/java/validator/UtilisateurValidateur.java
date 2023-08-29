@@ -1,3 +1,6 @@
+/*
+ * Les validators vont être là pour générer des Exceptions si les objets Java ne correspondent pas aux règles voulues
+ */
 package validator;
 
 import java.util.ArrayList;
@@ -11,7 +14,11 @@ public class UtilisateurValidateur {
 	private UtilisateurValidateur() {
  
 	}
- 
+
+	/*
+	 * La fonction vérifier va remplir un tableau de String contenant toutes les erreurs de validation soulevées
+	 * Puis va lever l'exception ChampInvalideException avec ce tableau de message d'erreur en paramètre
+	 */
 	public static void verifierChamps(Utilisateur aVerifier, String resource) throws ChampInvalideException {
 		
 	    List<String> errors = new ArrayList<>();

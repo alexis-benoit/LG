@@ -1,3 +1,8 @@
+/*
+ * Le controlleur est le point d'accès externe à l'application
+ * Il permet de créer les différentes URL pour les différentes méthodes (GET,POST,PUT et DELETE)
+ * Et de définir l'action du service associée
+ */
 package controller;
 
 import model.Utilisateur;

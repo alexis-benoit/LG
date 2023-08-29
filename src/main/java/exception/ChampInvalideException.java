@@ -1,7 +1,14 @@
+/*
+ * Exception pouvant être levée par nos Validateurs
+ */
 package exception;
 
 import java.util.List;
 
+/*
+ * Cette Exception est levée dès que des champs ne correspondent pas aux règles définie dans un validateur
+ * Elle prend en argument une liste de message d'erreur
+ */
 public class ChampInvalideException extends Exception {
 	private List<String> errors;
     private String resource;
