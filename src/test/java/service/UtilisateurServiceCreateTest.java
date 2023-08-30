@@ -32,6 +32,8 @@ class UtilisateurServiceCreateTest {
 	 * On définira l'action à faire
 	 * Le role de notre service étant de lancer le repository
 	 * On comptera le nombre d'appel au repository dans chaque test pour vérifier que l'appel se fait bien ou qu'il n'est pas appelé s'il ne le faut pas
+	 * En considérant que le repository fonctionne
+	 * On ne testera donc aps si le repository fonctionne bien ou non ici
 	 */
 	@Mock
     private UtilisateurRepository utilisateurRepository;
