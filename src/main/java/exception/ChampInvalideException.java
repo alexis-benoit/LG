@@ -14,7 +14,7 @@ public class ChampInvalideException extends Exception {
     private String resource;
 
     public ChampInvalideException(List<String> errors, String resource) {
-        super("Une erreur de champ invalide est survenue");
+        super(errors.get(0));
         this.errors = errors;
         this.resource = resource;
     }

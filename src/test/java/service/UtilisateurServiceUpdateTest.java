@@ -15,8 +15,6 @@ import repository.UtilisateurRepository;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 class UtilisateurServiceUpdateTest {
 
 	@Mock
@@ -43,7 +41,7 @@ class UtilisateurServiceUpdateTest {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setId(userId);
         utilisateur.setNomUtilisateur("utilisateur1");
-        utilisateur.setMotDePasse("motdepasse");
+        utilisateur.setMotDePasse("MotdepasseValide1!");
 
         when(utilisateurRepository.existsById(userId)).thenReturn(true);
         when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
@@ -66,10 +64,20 @@ class UtilisateurServiceUpdateTest {
     		utilisateurService.mettreAJourUtilisateur(1L, utilisateur);
         });
         
-    	assertTrue(exception.getErrors().contains("Nom d'utilisateur non renseigné"));
-    	assertTrue(exception.getErrors().contains("Mot de passe non renseigné"));
-    	assertFalse(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
-    	assertFalse(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
+    	assertTrue(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
+        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
+        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
+        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
+        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
+    	
+    	
+        assertTrue(exception.getErrors().contains("Mot de passe doit être renseigné"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
+        assertFalse(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Minuscule"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
     	
         assertEquals("mettreAJourUtilisateur", exception.getResource());
         
@@ -79,17 +87,54 @@ class UtilisateurServiceUpdateTest {
     @Test
     void testMettreAJourUtilisateurChampsInvalides() {
     	Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setNomUtilisateur("123456789012345678901234567890123456789012345678901"); // 51 caractères
-        utilisateur.setMotDePasse("123456789012345678901234567890123456789012345678901"); // 51 caractères
+        utilisateur.setNomUtilisateur("123456789012345678901234567890123456789012345678901!"); // 51 caractères
+        utilisateur.setMotDePasse("abcdefghijklmnopqrstucvwxysabcdefghijklmnopqrstucvwxysabcdefghijklmnopqrstucvwxys"); // 51 caractères
         
     	ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
     		utilisateurService.mettreAJourUtilisateur(1L, utilisateur);
         });
         
-    	assertFalse(exception.getErrors().contains("Nom d'utilisateur non renseigné"));
-    	assertFalse(exception.getErrors().contains("Mot de passe non renseigné"));
+    	assertFalse(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
+        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
     	assertTrue(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
+    	assertTrue(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
+    	assertTrue(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
+    	
+    	
+        assertFalse(exception.getErrors().contains("Mot de passe doit être renseigné"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
     	assertTrue(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
+    	assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
+    	assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
+    	assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
+    	
+        assertEquals("mettreAJourUtilisateur", exception.getResource());
+        
+        verify(utilisateurRepository, times(0)).save(utilisateur);
+    }
+    
+    @Test
+    void testMettreAJourUtilisateurChampsTropPetits() {
+    	Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setNomUtilisateur("U"); // 51 caractères
+        utilisateur.setMotDePasse("Aa1!"); // 51 caractères
+        
+    	ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
+    		utilisateurService.mettreAJourUtilisateur(1L, utilisateur);
+        });
+        
+    	assertFalse(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
+        assertTrue(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
+        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
+        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
+        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
+    	
+        assertFalse(exception.getErrors().contains("Mot de passe doit être renseigné"));
+        assertTrue(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
+        assertFalse(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
+        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
     	
         assertEquals("mettreAJourUtilisateur", exception.getResource());
         
