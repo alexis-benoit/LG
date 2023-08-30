@@ -8,6 +8,7 @@ package service;
 
 import model.Utilisateur;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,6 +35,9 @@ public class UtilisateurService {
     
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private UtilisateurValidateur utilisateurValidateur;
 
     /*
      * Renvoie l'ensemble de tous les utilisateurs sous forme de Liste d'objet Utilisateur
@@ -65,7 +69,7 @@ public class UtilisateurService {
      * Jusqu'à ce qu'elle soit gérée dans un bloc try catch
      */
     public Utilisateur creerUtilisateur(Utilisateur utilisateur) throws ChampInvalideException {
-    	UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
+    	utilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
         
     	String motDePasseCrypte = passwordEncoder.encode(utilisateur.getMotDePasse());
         utilisateur.setMotDePasse(motDePasseCrypte);
@@ -79,7 +83,7 @@ public class UtilisateurService {
      */
     public Utilisateur mettreAJourUtilisateur(Long id, Utilisateur utilisateur) throws ChampInvalideException {
 
-    	UtilisateurValidateur.verifierChamps(utilisateur, "mettreAJourUtilisateur");
+    	utilisateurValidateur.verifierChamps(utilisateur, "mettreAJourUtilisateur");
         
     	String motDePasseCrypte = passwordEncoder.encode(utilisateur.getMotDePasse());
         utilisateur.setMotDePasse(motDePasseCrypte);
@@ -109,5 +113,12 @@ public class UtilisateurService {
      */
     public void setPasswordEncoder(BCryptPasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
+    }
+
+    /*
+     * Définir l'Encodeur de mot de passe à utiliser
+     */
+    public void SetUtilisateurValidateur(UtilisateurValidateur utilisateurValidateur) {
+        this.utilisateurValidateur = utilisateurValidateur;
     }
 }

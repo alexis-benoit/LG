@@ -14,13 +14,18 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import exception.ChampInvalideException;
 import repository.UtilisateurRepository;
+import validator.UtilisateurValidateur;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
+import java.util.Locale;
 
 class UtilisateurServiceCreateTest {
 
@@ -40,6 +45,11 @@ class UtilisateurServiceCreateTest {
 
     private UtilisateurService utilisateurService;
 
+    private ResourceBundleMessageSource messageSource;
+    
+    @Autowired
+    private UtilisateurValidateur utilisateurValidateur;
+
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
@@ -54,6 +64,15 @@ class UtilisateurServiceCreateTest {
         utilisateurService = new UtilisateurService();
         utilisateurService.setUtilisateurRepository(utilisateurRepository);
         utilisateurService.setPasswordEncoder(passwordEncoder);
+        
+        utilisateurValidateur = new UtilisateurValidateur();
+        
+        messageSource = new ResourceBundleMessageSource();
+        messageSource.setBasename("messages"); // Use your message properties file name
+        messageSource.setDefaultEncoding("UTF-8");
+        
+        utilisateurValidateur.setMessageSource(messageSource);
+        utilisateurService.SetUtilisateurValidateur(utilisateurValidateur);
     }
 
     /*
@@ -90,10 +109,15 @@ class UtilisateurServiceCreateTest {
     void testCreerUtilisateurChampManquant() {
         Utilisateur utilisateur = new Utilisateur();
 
+        System.out.println("1");
+        String errorMessage = messageSource.getMessage("erreur.utilisateur.nomutilisateur.mincars", null, Locale.getDefault());
+        System.out.println("Error message: " + errorMessage);
+        
         ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
 	        utilisateurService.creerUtilisateur(utilisateur);
 	    });
 	    
+        
         assertTrue(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
         assertFalse(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
         assertFalse(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));

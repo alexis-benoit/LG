@@ -1,21 +1,45 @@
 package validator;
 
 import model.Utilisateur;
-import org.junit.jupiter.api.Test;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.MessageSource;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import configuration.MessageSourceConfig;
 import exception.ChampInvalideException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Locale;
+
+@SpringBootTest
+@SpringJUnitConfig(MessageSourceConfig.class) // Cette annotation configure la classe de configuration
 class UtilisateurValidatorTest {
 
+    @Autowired
+    private MessageSource messageSource;
+    
+    private UtilisateurValidateur utilisateurValidateur;
+
+    @BeforeEach
+    void setUp() {
+        this.utilisateurValidateur = new UtilisateurValidateur();
+        this.utilisateurValidateur.setMessageSource(messageSource);
+    }
+	
     @Test
     void testUtilisateurValide() throws ChampInvalideException {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNomUtilisateur("utilisateur1");
         utilisateur.setMotDePasse("MotdepasseValide1!");
 
-        assertDoesNotThrow(() -> UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur"));
+        assertDoesNotThrow(() -> utilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur"));
     }
 
     @Test
@@ -23,23 +47,23 @@ class UtilisateurValidatorTest {
         Utilisateur utilisateur = new Utilisateur();
 
         ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
-        	UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
+        	utilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
 	      });
 	    
-        assertTrue(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
+        System.out.println(exception.getErrors());
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.vide", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.mincars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.maxcars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.debuteavecunelettre", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.lettrenumberuniquement", null, Locale.getDefault())));
     	
-    	
-        assertTrue(exception.getErrors().contains("Mot de passe doit être renseigné"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
-        assertFalse(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Minuscule"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.vide", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.mincars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.maxcars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientmajuscule", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientminuscule", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientchiffre", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientcarspecial", null, Locale.getDefault())));
     }
     
     @Test
@@ -49,22 +73,23 @@ class UtilisateurValidatorTest {
         utilisateur.setMotDePasse("abcdefghijklmnopqrstucvwxysabcdefghijklmnopqrstucvwxysabcdefghijklmnopqrstucvwxys"); // + 50 caractères, ne contient pas de chiffre ni caractère spécial ni majuscule
 
         ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
-        	UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
+        	utilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
         });
         
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
-    	  assertTrue(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
-    	  assertTrue(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
-    	  assertTrue(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.vide", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.mincars", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.maxcars", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.debuteavecunelettre", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.lettrenumberuniquement", null, Locale.getDefault())));
     	
-    	
-        assertFalse(exception.getErrors().contains("Mot de passe doit être renseigné"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
-    	  assertTrue(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
-    	  assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
-    	  assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
-    	  assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.vide", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.mincars", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.maxcars", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientmajuscule", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientminuscule", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientchiffre", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientcarspecial", null, Locale.getDefault())));
+       
     }
     
     @Test
@@ -74,20 +99,22 @@ class UtilisateurValidatorTest {
         utilisateur.setMotDePasse("Aa1!");
 
         ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
-        	UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
+        	utilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
         });
         
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
-        assertTrue(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.vide", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.mincars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.maxcars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.debuteavecunelettre", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.lettrenumberuniquement", null, Locale.getDefault())));
     	
-        assertFalse(exception.getErrors().contains("Mot de passe doit être renseigné"));
-        assertTrue(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
-        assertFalse(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.vide", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.mincars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.maxcars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientmajuscule", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientminuscule", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientchiffre", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientcarspecial", null, Locale.getDefault())));
+    	
     }
 }
