@@ -2,10 +2,8 @@ package validator;
 
 import model.Utilisateur;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import exception.ChampInvalideException;
-import repository.UtilisateurRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +15,7 @@ class UtilisateurValidatorTest {
         utilisateur.setNomUtilisateur("utilisateur1");
         utilisateur.setMotDePasse("MotdepasseValide1!");
 
-        assertDoesNotThrow(() -> asserUtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur"));
+        assertDoesNotThrow(() -> UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur"));
     }
 
     @Test
@@ -25,7 +23,7 @@ class UtilisateurValidatorTest {
         Utilisateur utilisateur = new Utilisateur();
 
         ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
-	        asserUtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
+        	UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
 	      });
 	    
         assertTrue(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
@@ -51,7 +49,7 @@ class UtilisateurValidatorTest {
         utilisateur.setMotDePasse("abcdefghijklmnopqrstucvwxysabcdefghijklmnopqrstucvwxysabcdefghijklmnopqrstucvwxys"); // + 50 caractères, ne contient pas de chiffre ni caractère spécial ni majuscule
 
         ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
-            asserUtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
+        	UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
         });
         
         assertFalse(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
@@ -76,7 +74,7 @@ class UtilisateurValidatorTest {
         utilisateur.setMotDePasse("Aa1!");
 
         ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
-            asserUtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
+        	UtilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
         });
         
         assertFalse(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
