@@ -1,9 +1,3 @@
-/*
- * Les tests de Services correspondent aux Test unitaires
- * C'est ici que l'on va tester que nos fonctions font bien ce qu'on attends d'eux
- * Ici, j'ai divisé les tests par opération CRUD
- * Avec à chaque fois des cas OK et des cas qui doivent gérer des Exceptions
- */
 package service;
 
 import model.Utilisateur;
@@ -14,10 +8,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import configuration.MessageSourceConfig;
 import exception.ChampInvalideException;
 import repository.UtilisateurRepository;
 import validator.UtilisateurValidateur;
@@ -29,57 +27,50 @@ import java.util.Locale;
 
 class UtilisateurServiceCreateTest {
 
-	/*
-	 * Ici, on veut tester que la classe Service fasse ce qu'on attend
-	 * On ne veut pas tester le repository
-	 * On définit donc le repository comme un Mock (un faux repository)
-	 * Et à chaque fois qu'on fera appel au repository
-	 * On définira l'action à faire
-	 * Le role de notre service étant de lancer le repository
-	 * On comptera le nombre d'appel au repository dans chaque test pour vérifier que l'appel se fait bien ou qu'il n'est pas appelé s'il ne le faut pas
-	 * En considérant que le repository fonctionne
-	 * On ne testera donc aps si le repository fonctionne bien ou non ici
-	 */
 	@Mock
     private UtilisateurRepository utilisateurRepository;
 
+    @InjectMocks
     private UtilisateurService utilisateurService;
-
-    private ResourceBundleMessageSource messageSource;
-    
-    @Autowired
-    private UtilisateurValidateur utilisateurValidateur;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
-
+    
     /*
-     * Avant chaque Test, cette fonction sera lancée
-     * Cette fonction définit l'encodeur du service et son repository
+     * Pour une raison inconnue j'avais des erreur messageSource is null
+     * Quand j'essayais d'utiliser l'annotation @Autowired sur messageSource
+     * 
+     * Je ne peux pas appeler MessageSourceConfig.messageSource() a cause du "static"
+     * 
+     * J'ai également essayé d'ajouter les annotations @SpringBootTest et @SpringJUnitConfig(MessageSourceConfig.class)
+     * Sur la classe, comme c'était fait pour le UtilisateurValidatorTes, mais cette fois j'avais une erreur liée au Bean sur mon passwordEncodeur
+     * 
+     * Avec cette méthode (copier la configuration, ça fonctionne), même si ce n'est pas conventionnel
+     * 
+     * Lorsque je comprendrais mieux les Bean, les Mock, Les configuration, je pourrais modifier ce code correctement je pense
      */
+    public MessageSource messageSource() {
+        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+        messageSource.setBasename("i18n/messages"); // No .properties or language suffix
+        messageSource.setDefaultEncoding("UTF-8");
+        return messageSource;
+    }
+
+    private MessageSource messageSource = this.messageSource();
+    
     @BeforeEach
     void setUp() {
     	MockitoAnnotations.openMocks(this);
     	passwordEncoder = mock(BCryptPasswordEncoder.class);
+    	UtilisateurValidateur utilisateurValidateur = new UtilisateurValidateur();
+    	utilisateurValidateur.setMessageSource(messageSource);
+    	
         utilisateurService = new UtilisateurService();
         utilisateurService.setUtilisateurRepository(utilisateurRepository);
         utilisateurService.setPasswordEncoder(passwordEncoder);
-        
-        utilisateurValidateur = new UtilisateurValidateur();
-        
-        messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasename("messages"); // Use your message properties file name
-        messageSource.setDefaultEncoding("UTF-8");
-        
-        utilisateurValidateur.setMessageSource(messageSource);
         utilisateurService.SetUtilisateurValidateur(utilisateurValidateur);
     }
 
-    /*
-     * Ce test va vérifier que lorsque les champs sont correctements renseignés
-     * Aucune erreur n'est levée et l'utilisateur est bien créé et le mot de passe est bien crypté
-     * Et que la fonction repository.save soit bien appelée 1 fois
-     */
     @Test
     void testCreerUtilisateurValide() throws ChampInvalideException {
         Utilisateur utilisateur = new Utilisateur();
@@ -99,39 +90,27 @@ class UtilisateurServiceCreateTest {
         verify(utilisateurRepository, times(1)).save(utilisateur);
     }
     
-    /*
-     * Ce test va vérifier que lorsque les champs ne sont pas renseignés
-     * Les erreurs "Nom d'utilisateur non renseigné" et "Mot de passe non renseigné" soient levée
-     * Mais pas les autres erreurs
-     * Et que le utilisateur.repository ne soit pas appelé
-     */
     @Test
     void testCreerUtilisateurChampManquant() {
         Utilisateur utilisateur = new Utilisateur();
 
-        System.out.println("1");
-        String errorMessage = messageSource.getMessage("erreur.utilisateur.nomutilisateur.mincars", null, Locale.getDefault());
-        System.out.println("Error message: " + errorMessage);
-        
         ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
 	        utilisateurService.creerUtilisateur(utilisateur);
 	    });
 	    
-        
-        assertTrue(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.vide", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.mincars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.maxcars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.debuteavecunelettre", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.lettrenumberuniquement", null, Locale.getDefault())));
     	
-    	
-        assertTrue(exception.getErrors().contains("Mot de passe doit être renseigné"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
-        assertFalse(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Minuscule"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.vide", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.mincars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.maxcars", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientmajuscule", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientminuscule", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientchiffre", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientcarspecial", null, Locale.getDefault())));
     	
         assertEquals("creerUtilisateur", exception.getResource());
         
@@ -139,7 +118,7 @@ class UtilisateurServiceCreateTest {
     }
     
     @Test
-    void testCreerUtilisateurChampsInvalides() {
+    void testCreerUtilisateurLimiteTaille() {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNomUtilisateur("123456789012345678901234567890123456789012345678901!"); // + 50 caractères, Commence par chiffre, Contient caractère spécial
         utilisateur.setMotDePasse("abcdefghijklmnopqrstucvwxysabcdefghijklmnopqrstucvwxysabcdefghijklmnopqrstucvwxys"); // + 50 caractères, ne contient pas de chiffre ni caractère spécial ni majuscule
@@ -148,47 +127,19 @@ class UtilisateurServiceCreateTest {
             utilisateurService.creerUtilisateur(utilisateur);
         });
         
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
-    	assertTrue(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
-    	assertTrue(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
-    	assertTrue(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.vide", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.mincars", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.maxcars", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.debuteavecunelettre", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.lettrenumberuniquement", null, Locale.getDefault())));
     	
-    	
-        assertFalse(exception.getErrors().contains("Mot de passe doit être renseigné"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
-    	assertTrue(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
-    	assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
-    	assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
-    	assertTrue(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
-    	
-        assertEquals("creerUtilisateur", exception.getResource());
-        
-        verify(utilisateurRepository, times(0)).save(utilisateur);
-    }
-    
-    @Test
-    void testCreerUtilisateurChampsTropPetis() {
-        Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setNomUtilisateur("U");
-        utilisateur.setMotDePasse("Aa1!");
-
-        ChampInvalideException exception = assertThrows(ChampInvalideException.class, () -> {
-            utilisateurService.creerUtilisateur(utilisateur);
-        });
-        
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit être renseigné"));
-        assertTrue(exception.getErrors().contains("Nom d'utilisateur doit faire au moins 3 caractères"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne peut exceder 50 caractères"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur doit commencer par une lettre"));
-        assertFalse(exception.getErrors().contains("Nom d'utilisateur ne doit contenir que des lettres ou des chiffres"));
-    	
-        assertFalse(exception.getErrors().contains("Mot de passe doit être renseigné"));
-        assertTrue(exception.getErrors().contains("Mot de passe doit faire au moins 10 caractères"));
-        assertFalse(exception.getErrors().contains("Mot de passe ne peut exceder 50 caractères"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Majuscule"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Chiffre"));
-        assertFalse(exception.getErrors().contains("Mot de passe doit contenir au moins 1 Caractère spécial"));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.vide", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.mincars", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.maxcars", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientmajuscule", null, Locale.getDefault())));
+        assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientminuscule", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientchiffre", null, Locale.getDefault())));
+        assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.motdepasse.contientcarspecial", null, Locale.getDefault())));
     	
         assertEquals("creerUtilisateur", exception.getResource());
         

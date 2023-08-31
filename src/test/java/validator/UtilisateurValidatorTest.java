@@ -50,7 +50,6 @@ class UtilisateurValidatorTest {
         	utilisateurValidateur.verifierChamps(utilisateur, "creerUtilisateur");
 	      });
 	    
-        System.out.println(exception.getErrors());
         assertTrue(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.vide", null, Locale.getDefault())));
         assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.mincars", null, Locale.getDefault())));
         assertFalse(exception.getErrors().contains(messageSource.getMessage("erreur.utilisateur.nomutilisateur.maxcars", null, Locale.getDefault())));
